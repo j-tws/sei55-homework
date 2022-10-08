@@ -7,6 +7,8 @@ const bodyParser = require("body-parser");
 // Use this CORS package as part of the Express "middleware stack"
 app.use( cors() ) // set the CORS allow header for us on every request, for AJAX requests
 
+// To get access to POSTed 'formdata' body content, we have to explicitly
+// add a new middleware handler for it
 app.use( express.json() );
 app.use( express.urlencoded({ extended: true }) ); 
 // app.use(bodyParser.urlencoded({ extended: false }));
@@ -102,9 +104,7 @@ app.get('/flights/:id', async (req, res) => {
 app.options('/reservations', cors())
 
 app.post('/reservations', cors(), async (req, res) => {
-
-  const flight = await Flight.findOne( {_id: req.body.flight_id} )
-
+  console.log('POST /reservations')
   console.log('req.body:', req.body);
   const newReservation = {
     row: req.body.row,
@@ -113,8 +113,40 @@ app.post('/reservations', cors(), async (req, res) => {
     flight_id: req.body.flight_id,
   }
 
-  flight.reservations.push(newReservation)
-  await flight.save()
-  res.json(newReservation)
+  try{
+    const flight = await Flight.findOne( {_id: req.body.flight_id} )
+  
+    flight.reservations.push(newReservation)
+    await flight.save()
+    res.json(newReservation)
+    
+  // LUKE'S SOLUTION =======================================
+    
+    // const result = await Flight.updateOne(
+    //   // First argument: search object which specifies how to find the FLight
+    //   // that you want to update
+    //   {_id: req.body.flight_id} ,
+    //   // Second argument: what update to perform, i.e fields and their new values
+    //   {
+    //     // reservations: [newResrvation] // NOPE!! REPLACES existing reservation
+    //     $push: {
+    //       reservations: newReservation
+    //     }
+    //   }
+    // )
+    // console.log('result of updateOne:', result)
+    if(result.matchedCount === 0){
+      console.log('Flight not found for reservation update', result, req.body);
+      // res.sendStatus( 422 )
+      throw new Error('Flight not found by ID')
+    }
+
+    // res.json(newReservation)
+
+  }catch(err){
+    console.error('Error making reservations', err)
+    res.sendStatus(422)
+  }
+
 
 })

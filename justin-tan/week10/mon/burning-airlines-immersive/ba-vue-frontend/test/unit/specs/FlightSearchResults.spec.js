@@ -21,6 +21,7 @@ const mockResults = [
   }
 ]
 
+// is this 'stubbing' or fake axios.get written correctly?
 sinon.stub(axios, 'get')
   // .withArgs(`${BASE_URL}/flights/search/SYD/MEL`)
   .returns(Promise.resolve({
